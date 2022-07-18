@@ -25,7 +25,7 @@ const getWeather = (inputCity) => {
     fetch(`https://api.openweathermap.org/data/2.5/weather?q=${inputCity}&appid=1a43edf62ba75c3505e0065392454351&units=metric`)
     .then(res =>{
         if(!res.ok){
-            throw new Error('Please enter valid city name')
+            throw new Error()
         }     
         return res.json();
     })
@@ -38,7 +38,7 @@ const getWeather = (inputCity) => {
        
         
     })
-    .catch(err=>alert(err))
+    .catch(err=>alert(err.status))
     .finally(data=>{
         searchBar.value = "";
     });  
@@ -49,6 +49,7 @@ const getWeather = (inputCity) => {
 navigator.geolocation.getCurrentPosition(function(pos){
     const latitude = pos.coords.latitude;
     const longitude = pos.coords.longitude;
+    
     fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`)
     .then(res=>{
         if(!res.ok) throw new Error()
@@ -56,10 +57,13 @@ navigator.geolocation.getCurrentPosition(function(pos){
     })
     .then((data)=>{
         getWeather(data.locality);
+        console.log(data.locality)
        
     })
     .catch(err=>{
             console.log(err);
+            alert('Cannot get your location!')
+            getWeather('Taipei')
         })
 
     
