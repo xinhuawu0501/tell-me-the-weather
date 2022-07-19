@@ -20,64 +20,71 @@ const changeMode = ()=>{
 }
 changeMode();
 
+const renderWeather = function(data, inputCity){
+    const currentTemp = data.main.temp.toFixed(1);
+    const cityStr = inputCity.toString();
+    const str = cityStr.split(' ').map((element) => {return element[0].toUpperCase() + element.slice(1).toLowerCase()}).join(' ');
+    city.textContent = str;
+    tempNumber.textContent = currentTemp;
+    weatherIcon.src = `http://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;  
+    searchBar.value = ""
+}
+
+
 //search weather in specific city and display it
-const getWeather = (inputCity) => {
-    fetch(`https://api.openweathermap.org/data/2.5/weather?q=${inputCity}&appid=1a43edf62ba75c3505e0065392454351&units=metric`)
-    .then(res =>{
-        if(!res.ok){
-            throw new Error()
-        }     
-        return res.json();
-    })
-    .then(data =>{
-        const currentTemp = data.main.temp.toFixed(1);
-        const cityStr = inputCity.toString();
-        city.textContent = cityStr.slice(0, 1).toUpperCase() + cityStr.slice(1).toLowerCase() 
-        tempNumber.textContent = currentTemp;
-        weatherIcon.src = `http://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`; 
-       
-        
-    })
-    .catch(err=>alert(err.status))
-    .finally(data=>{
-        searchBar.value = "";
-    });  
+const getWeather = async function(inputCity){
+    try{
+    const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${inputCity}&appid=1a43edf62ba75c3505e0065392454351&units=metric`)
+    if(!res.ok) throw new Error('Please enter valid city name')
+    const data = await res.json();
+
+    renderWeather(data, inputCity)
+    }
+    catch(err){
+        alert(err.message)
+    }
 };
 
 
-//default: detect user's city
-navigator.geolocation.getCurrentPosition(function(pos){
-    const latitude = pos.coords.latitude;
-    const longitude = pos.coords.longitude;
-    
-    fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`)
-    .then(res=>{
-        if(!res.ok) throw new Error()
-        return res.json()
-    })
-    .then((data)=>{
-        getWeather(data.locality);
-        console.log(data.locality)
-       
-    })
-    .catch(err=>{
-            console.log(err);
-            alert('Cannot get your location!')
-            getWeather('Taipei')
-        })
+// const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${inputCity}&appid=1a43edf62ba75c3505e0065392454351&units=metric`)
 
+// default: detect user's city
+(async function(){
+    try{
+    const geoPromise = new Promise((resolve, reject)=>{
+        navigator.geolocation.getCurrentPosition(
+            (pos)=>resolve(pos),
+            (err)=>reject(err.message)
+        )
+    })
+    const res = await geoPromise;
+    const {latitude, longitude} = res.coords;
+    const lat = latitude.toFixed(2);
+    const lon = longitude.toFixed(2)
+
+    const resW = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=1a43edf62ba75c3505e0065392454351&units=metric`)
+    if(!resW.ok) throw new Error()
+    const userWeather = await resW.json();
+    renderWeather(userWeather, 'Your City')
+
+}catch(err){
+    alert(err.message)
+}
     
-});
+
+}());
 
 
 searchButton.addEventListener("click", (e)=>{
     getWeather(searchBar.value)
+
     
 });
 
 searchBar.addEventListener("keypress", (event) => {
     if (event.key == "Enter") 
     getWeather(searchBar.value)
+
 });
 
 
